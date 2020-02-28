@@ -1,0 +1,42 @@
+version: "3.3"
+    services:
+        traefik:
+            image: traefik:latest
+            container_name: "traefik"
+            restart: "always"
+            env_file: 
+                - "/home/anthony/docker-compose-hill/secrets.env"
+            command:
+              - "--api.insecure=true"
+              - "--providers.docker=true"
+              - "--providers.docker.network=traefik_proxy"
+              - "--providers.file.directory=/etc/traefik"
+              - "--providers.file.filename=config.toml"
+              - "--providers.docker.exposedbydefault=false"
+              - "--entrypoints.web.address=:80"
+              - "--entrypoints.websecure.address=:443"
+              - "--certificatesresolvers.mydnschallenge.acme.dnschallenge=true"
+              - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
+              - "--certificatesresolvers.mydnschallenge.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+              - "--certificatesresolvers.mydnschallenge.acme.email=${CF_EMAIL}"
+              - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
+            ports:
+              - "80:80"
+              - "443:443"
+              - "8080:8080"
+            environment:
+              - "CF_API_EMAIL=${CF_EMAIL}"
+              - "CF_API_KEY=${CF_API_KEY}
+            networks:
+              traefik_proxy:
+            volumes:
+              - "${LE_DIR}:/letsencrypt"
+              - "/var/run/docker.sock:/var/run/docker.sock:ro"
+              - "/home/anthony/Docker/traefik:/etc/traefik"
+
+          
+        
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
