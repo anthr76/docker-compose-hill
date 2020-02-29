@@ -148,9 +148,9 @@ services:
       - "homeassistant"
     user: root
     environment:
-      - TZ=America/New_York
-      - PUID=1000
-      - PGID=1000
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
     volumes:
       - ${HOME}/Docker/nodered:/data
       - /etc/localtime:/etc/localtime:ro
