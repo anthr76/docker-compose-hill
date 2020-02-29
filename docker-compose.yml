@@ -95,11 +95,48 @@ services:
       - ZONE=anthonyrabbito.com
       - SUBDOMAIN=hillserve
       - PROXIED=false
-      
+  homeassistant:
+    container_name: homeassistant
+    image: homeassistant/home-assistant:stable
+    networks:
+      macvlan101:
+      macvlan100:
+      traefik_proxy:
+    volumes:
+      - ${HOME}/Docker/homeassistant:/config
+    environment:
+      - TZ=TZ
+      - PUID=PUID
+      - PGID=PGID
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyUSB1:/dev/ttyUSB1
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true"
+      - traefik.http.routers.homeassistant.rule=Host(`hillha.anthonyrabbito.com`)
+      - traefik.http.routers.homeassistant.entrypoints=websecure
+      - traefik.http.routers.homeassistant.tls.certresolver=mydnschallenge
+      - traefik.http.middlewares.homeassistant.headers.SSLRedirect=true
+      - traefik.http.middlewares.homeassistant.headers.STSSeconds=315360000
+      - traefik.http.middlewares.homeassistant.headers.browserXSSFilter=true
+      - traefik.http.middlewares.homeassistant.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.homeassistant.headers.SSLHost=(`hillha.anthonyrabbito.com`)
+      - traefik.http.middlewares.homeassistant.headers.forceSTSHeader=true
+      - traefik.http.middlewares.homeassistant.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.homeassistant.headers.STSPreload=true
+      - traefik.http.middlewares.homeassistant.headers.frameDeny=true
+      - traefik.http.services.homeassistant.loadbalancer.server.port=8123
+      - traefik.docker.network=traefik_proxy
+
 networks:
   traefik_proxy:
     external:
       name: traefik_proxy
+  macvlan101:
+    external: true
+  macvlan100:
+    external: true
 
 secrets:
   secrets:
