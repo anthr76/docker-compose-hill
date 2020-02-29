@@ -84,7 +84,18 @@ services:
       - traefik.http.routers.bitwarden-websocket-http.middlewares=redirect-https
       - traefik.http.routers.bitwarden-websocket-http.service=bitwarden-websocket
       - traefik.http.services.bitwarden-websocket.loadbalancer.server.port=3012
-
+    
+  cloudflare-ddns:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflareDDNS
+    restart: always
+    environment:
+      - EMAIL=CF_API_EMAIL
+      - API_KEY=CF_API_KEY
+      - ZONE=anthonyrabbito.com
+      - SUBDOMAIN=hillserve
+      - PROXIED=false
+      
 networks:
   traefik_proxy:
     external:
