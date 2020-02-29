@@ -14,10 +14,14 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge=true
+      - --certificatesresolvers.myresolver.acme.httpChallenge=true
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare
+      - --certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=websecure
       - --certificatesresolvers.mydnschallenge.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       - --certificatesresolvers.mydnschallenge.acme.email=${CF_EMAIL}
+      - --certificatesresolvers.myresolver.acme.email=${CF_EMAIL}
       - --certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
     ports:
       - 80:80
       - 443:443
@@ -101,6 +105,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ} 
   homeassistant:
+
     container_name: homeassistant
     image: homeassistant/home-assistant:stable
     networks:
@@ -133,6 +138,27 @@ services:
       - traefik.http.middlewares.homeassistant.headers.frameDeny=true
       - traefik.http.services.homeassistant.loadbalancer.server.port=8123
       - traefik.docker.network=traefik_proxy
+  nodered:
+    container_name: node-red
+    restart: unless-stopped
+    networks:
+      traefik_proxy:
+    image: nodered/node-red:latest
+    depends_on:
+      - "homeassistant"
+    user: root
+    environment:
+      - TZ=America/New_York
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ${HOME}/Docker/nodered:/data
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nodered.rule=Host(`node-red.hill`)
+      - traefik.http.routers.nodered.entrypoints=web
+      - traefik.docker.network=traefik_proxy
 
 
 
@@ -145,5 +171,3 @@ networks:
     external: true
   macvlan100:
     external: true
-
-
