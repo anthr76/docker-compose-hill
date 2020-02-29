@@ -16,15 +16,15 @@ services:
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge=true
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.mydnschallenge.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
-      - --certificatesresolvers.mydnschallenge.acme.email=CF_EMAIL
+      - --certificatesresolvers.mydnschallenge.acme.email=${CF_EMAIL}
       - --certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json
     ports:
       - 80:80
       - 443:443
       - 8080:8080
     environment:
-      - CF_API_EMAIL=CF_EMAIL
-      - CF_API_KEY=CF_API_KEY
+      - CF_API_EMAIL=${CF_EMAIL}
+      - CF_API_KEY=${CF_API_KEY}
     networks:
       traefik_proxy:
     volumes:
@@ -37,15 +37,15 @@ services:
     networks:
       traefik_proxy:
     environment:
-      - PUID=PUID
-      - PGID=PGID
-      - TZ=TZ
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
       - ${HOME}/Docker/ANTHONYRABBITO/config:/config
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.myweb.rule=Host(`anthonyrabbito.com`)
+      - traefik.http.routers.myweb.rule=${DOMAIN}
       - traefik.http.routers.myweb.entrypoints=websecure
       - traefik.http.routers.myweb.tls.certresolver=mydnschallenge
       - traefik.http.services.myweb.loadbalancer.server.port=80
@@ -57,8 +57,11 @@ services:
     volumes:
       - ${HOME}/Docker/bitwarden:/data
     environment:
-      WEBSOCKET_ENABLED: 'true'
-      SIGNUPS_ALLOWED: 'false'
+      - WEBSOCKET_ENABLED= true
+      - SIGNUPS_ALLOWED= false
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ} 
     networks:
       traefik_proxy:
     labels:
@@ -66,35 +69,37 @@ services:
       - traefik.docker.network=traefik_proxy
       - traefik.http.middlewares.redirect-https.redirectScheme.scheme=https
       - traefik.http.middlewares.redirect-https.redirectScheme.permanent=true
-      - traefik.http.routers.bitwarden-ui-https.rule=Host(`bitwarden.anthonyrabbito.com`)
+      - traefik.http.routers.bitwarden-ui-https.rule=${BWDOMAIN}
       - traefik.http.routers.bitwarden-ui-https.entrypoints=websecure
       - traefik.http.routers.bitwarden-ui-https.tls=true
       - traefik.http.routers.bitwarden-ui-https.service=bitwarden-ui
-      - traefik.http.routers.bitwarden-ui-http.rule=Host(`bitwarden.anthonyrabbito.com`)
+      - traefik.http.routers.bitwarden-ui-http.rule=${BWDOMAIN}
       - traefik.http.routers.bitwarden-ui-http.entrypoints=web
       - traefik.http.routers.bitwarden-ui-http.middlewares=redirect-https
       - traefik.http.routers.bitwarden-ui-http.service=bitwarden-ui
       - traefik.http.services.bitwarden-ui.loadbalancer.server.port=80
-      - traefik.http.routers.bitwarden-websocket-https.rule=Host(`bitwarden.anthonyrabbito.com`) && Path(`/notifications/hub`)
+      - traefik.http.routers.bitwarden-websocket-https.rule=${BWDOMAIN_WS}
       - traefik.http.routers.bitwarden-websocket-https.entrypoints=websecure
       - traefik.http.routers.bitwarden-websocket-https.tls=true
       - traefik.http.routers.bitwarden-websocket-https.service=bitwarden-websocket
-      - traefik.http.routers.bitwarden-websocket-http.rule=Host(`bitwarden.anthonyrabbito.com`) && Path(`/notifications/hub`)
+      - traefik.http.routers.bitwarden-websocket-http.rule=${BWDOMAIN_WS}
       - traefik.http.routers.bitwarden-websocket-http.entrypoints=web
       - traefik.http.routers.bitwarden-websocket-http.middlewares=redirect-https
       - traefik.http.routers.bitwarden-websocket-http.service=bitwarden-websocket
       - traefik.http.services.bitwarden-websocket.loadbalancer.server.port=3012
-    
   cloudflare-ddns:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflareDDNS
     restart: always
     environment:
-      - EMAIL=CF_API_EMAIL
-      - API_KEY=CF_API_KEY
-      - ZONE=anthonyrabbito.com
-      - SUBDOMAIN=hillserve
+      - EMAIL=${CF_EMAIL}
+      - API_KEY=${CF_API_KEY}
+      - ZONE=${DOMAIN}
+      - SUBDOMAIN=${SUBDOMAIN}
       - PROXIED=false
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ} 
   homeassistant:
     container_name: homeassistant
     image: homeassistant/home-assistant:stable
@@ -105,29 +110,32 @@ services:
     volumes:
       - ${HOME}/Docker/homeassistant:/config
     environment:
-      - TZ=TZ
-      - PUID=PUID
-      - PGID=PGID
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
       - /dev/ttyUSB1:/dev/ttyUSB1
     restart: unless-stopped
     labels:
-      - traefik.enable=true"
-      - traefik.http.routers.homeassistant.rule=Host(`hillha.anthonyrabbito.com`)
+      - traefik.enable=true
+      - traefik.http.routers.homeassistant.rule=${HILLHADOMAIN}
       - traefik.http.routers.homeassistant.entrypoints=websecure
       - traefik.http.routers.homeassistant.tls.certresolver=mydnschallenge
       - traefik.http.middlewares.homeassistant.headers.SSLRedirect=true
       - traefik.http.middlewares.homeassistant.headers.STSSeconds=315360000
       - traefik.http.middlewares.homeassistant.headers.browserXSSFilter=true
       - traefik.http.middlewares.homeassistant.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.homeassistant.headers.SSLHost=(`hillha.anthonyrabbito.com`)
+      - traefik.http.middlewares.homeassistant.headers.SSLHost=${HILLHADOMAIN}
       - traefik.http.middlewares.homeassistant.headers.forceSTSHeader=true
       - traefik.http.middlewares.homeassistant.headers.STSIncludeSubdomains=true
       - traefik.http.middlewares.homeassistant.headers.STSPreload=true
       - traefik.http.middlewares.homeassistant.headers.frameDeny=true
       - traefik.http.services.homeassistant.loadbalancer.server.port=8123
       - traefik.docker.network=traefik_proxy
+
+
+
 
 networks:
   traefik_proxy:
@@ -138,6 +146,4 @@ networks:
   macvlan100:
     external: true
 
-secrets:
-  secrets:
-    file: /home/anthony/Docker/docker-compose-hill/secrets.env
+
