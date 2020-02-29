@@ -106,7 +106,7 @@ services:
       - TZ=${TZ} 
   homeassistant:
 
-    container_name: homeassistant
+    container_name: homeassistant-stable
     image: homeassistant/home-assistant:stable
     networks:
       macvlan101:
