@@ -98,7 +98,7 @@ services:
     environment:
       - EMAIL=${CF_EMAIL}
       - API_KEY=${CF_API_KEY}
-      - ZONE=${DOMAIN}
+      - ZONE=${CF_BASE}
       - SUBDOMAIN=${SUBDOMAIN}
       - PROXIED=false
       - PUID=${PUID}
@@ -126,15 +126,6 @@ services:
       - traefik.http.routers.homeassistant.rule=${HILLHADOMAIN}
       - traefik.http.routers.homeassistant.entrypoints=websecure
       - traefik.http.routers.homeassistant.tls.certresolver=mydnschallenge
-      - traefik.http.middlewares.homeassistant.headers.SSLRedirect=true
-      - traefik.http.middlewares.homeassistant.headers.STSSeconds=315360000
-      - traefik.http.middlewares.homeassistant.headers.browserXSSFilter=true
-      - traefik.http.middlewares.homeassistant.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.homeassistant.headers.SSLHost=${HILLHADOMAIN}
-      - traefik.http.middlewares.homeassistant.headers.forceSTSHeader=true
-      - traefik.http.middlewares.homeassistant.headers.STSIncludeSubdomains=true
-      - traefik.http.middlewares.homeassistant.headers.STSPreload=true
-      - traefik.http.middlewares.homeassistant.headers.frameDeny=true
       - traefik.http.services.homeassistant.loadbalancer.server.port=8123
       - traefik.docker.network=traefik_proxy
   nodered:
