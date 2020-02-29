@@ -57,7 +57,7 @@ services:
   bitwarden:
     image: bitwardenrs/server
     restart: unless-stopped
-    container_name: bitwarden
+    container_name: bitwarden-rs
     volumes:
       - ${HOME}/Docker/bitwarden:/data
     environment:
