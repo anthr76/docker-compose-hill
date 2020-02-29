@@ -93,7 +93,7 @@ services:
       - traefik.http.services.bitwarden-websocket.loadbalancer.server.port=3012
   cloudflare-ddns:
     image: oznu/cloudflare-ddns:latest
-    container_name: cloudflareDDNS
+    container_name: cloudflare-dynDNS
     restart: always
     environment:
       - EMAIL=${CF_EMAIL}
