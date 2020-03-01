@@ -1,15 +1,14 @@
 version: "3.7"
 services:
   traefik:
-    image: traefik:v2.1.6
+    image: containous/traefik:experimental-master
     container_name: traefik
     restart: always
     extra_hosts: 
-      - "host.docker.internal:172.17.0.1"
+      - host.docker.internal:172.17.0.1
     command:
       - --api.insecure=true
       - --providers.docker=true
-      - --providers.docker.network=bridge
       - --providers.file.directory=/etc/traefik
       - --providers.file.filename=config.toml
       - --providers.docker.exposedbydefault=false
@@ -37,7 +36,9 @@ services:
       - ${HOME}/Docker/traefik:/etc/traefik
   nginx-personal:
     image: linuxserver/nginx
-    container_name: my-web-nginx    
+    container_name: my-web-nginx
+    depends_on: 
+      - traefik    
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -55,6 +56,8 @@ services:
     image: bitwardenrs/server
     restart: unless-stopped
     container_name: bitwarden-rs
+    depends_on: 
+      - traefik
     volumes:
       - ${HOME}/Docker/bitwarden:/data
     environment:
@@ -125,7 +128,8 @@ services:
     restart: unless-stopped
     image: nodered/node-red:latest
     depends_on:
-      - "homeassistant"
+      - homeassistant
+      - traefik
     user: root
     environment:
       - TZ=${TZ}
@@ -141,6 +145,8 @@ services:
   filebrowser:
     image: halverneus/static-file-server
     container_name: fileserver-web
+    depends_on: 
+      - traefik
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -157,6 +163,8 @@ services:
   thecap:
     image: linuxserver/nginx
     container_name: cap-web-nginx
+    depends_on: 
+      - traefik
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -192,6 +200,8 @@ services:
   nginx:
     image: linuxserver/nginx
     container_name: njco-web-nginx
+    depends_on: 
+      - traefik
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -208,6 +218,8 @@ services:
   plex:
     image: linuxserver/plex
     container_name: plex-pms
+    tmpfs:
+      - /tmp
     network_mode: host
     environment:
       - PUID${PUID}
@@ -226,8 +238,8 @@ services:
       - traefik.http.routers.plex.entrypoints=websecure
       - traefik.http.routers.plex.tls.certresolver=mydnschallenge
       - traefik.http.services.plex.loadbalancer.server.port=32400
-      - traefik.http.routers.plex.rule=Host(`plex.hill`)
-      - traefik.http.routers.plex.entrypoints=web
+      - traefik.http.routers.plex-internal.rule=Host(`plex.hill`)
+      - traefik.http.routers.plex-internal.entrypoints=web
 
 networks:
   macvlan101:
