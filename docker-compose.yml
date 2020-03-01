@@ -5,7 +5,7 @@ services:
     container_name: traefik
     restart: always
     extra_hosts: 
-      - "host.docker.internal:192.168.32.1"
+      - "host.docker.internal:172.17.0.1"
     command:
       - --api.insecure=true
       - --providers.docker=true
@@ -37,7 +37,7 @@ services:
       - ${HOME}/Docker/traefik:/etc/traefik
   nginx-personal:
     image: linuxserver/nginx
-    container_name: my-web-nginx
+    container_name: my-web-nginx    
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -51,7 +51,6 @@ services:
       - traefik.http.routers.myweb.entrypoints=websecure
       - traefik.http.routers.myweb.tls.certresolver=mydnschallenge
       - traefik.http.services.myweb.loadbalancer.server.port=80
-      - traefik.docker.network=bridge
   bitwarden:
     image: bitwardenrs/server
     restart: unless-stopped
@@ -63,10 +62,9 @@ services:
       - SIGNUPS_ALLOWED= false
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=${TZ}
+      - TZ=${TZ}      
     labels:
       - traefik.enable=true
-      - traefik.docker.network=bridge
       - traefik.http.middlewares.redirect-https.redirectScheme.scheme=https
       - traefik.http.middlewares.redirect-https.redirectScheme.permanent=true
       - traefik.http.routers.bitwarden-ui-https.rule=${BWDOMAIN}
@@ -90,7 +88,7 @@ services:
   cloudflare-ddns:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflare-dynDNS
-    restart: always
+    restart: always  
     environment:
       - EMAIL=${CF_EMAIL}
       - API_KEY=${CF_API_KEY}
@@ -122,7 +120,6 @@ services:
       - traefik.http.routers.homeassistant.entrypoints=websecure
       - traefik.http.routers.homeassistant.tls.certresolver=mydnschallenge
       - traefik.http.services.homeassistant.loadbalancer.server.port=8123
-      - traefik.docker.network=bridge
   nodered:
     container_name: node-red
     restart: unless-stopped
@@ -141,7 +138,6 @@ services:
       - traefik.enable=true
       - traefik.http.routers.nodered.rule=Host(`node-red.hill`)
       - traefik.http.routers.nodered.entrypoints=web
-      - traefik.docker.network=bridge
   filebrowser:
     image: halverneus/static-file-server
     container_name: fileserver-web
@@ -158,7 +154,6 @@ services:
       - traefik.http.routers.fileserve.entrypoints=websecure
       - traefik.http.routers.fileserve.tls.certresolver=mydnschallenge
       - traefik.http.services.fileserve.loadbalancer.server.port=8080
-      - traefik.docker.network=bridge
   thecap:
     image: linuxserver/nginx
     container_name: cap-web-nginx
@@ -175,7 +170,6 @@ services:
       - traefik.http.routers.cap.entrypoints=websecure
       - traefik.http.routers.cap.tls.certresolver=mydnschallenge
       - traefik.http.services.cap.loadbalancer.server.port=80
-      - traefik.docker.network=bridge
   samba:
     image: dperson/samba
     container_name: samba
@@ -211,7 +205,6 @@ services:
       - traefik.http.routers.njco.entrypoints=websecure
       - traefik.http.routers.njco.tls.certresolver=mydnschallenge    
       - traefik.http.services.njco.loadbalancer.server.port=80
-      - traefik.docker.network=bridge
   plex:
     image: linuxserver/plex
     container_name: plex-pms
@@ -229,7 +222,6 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.docker.network=bridge
       - traefik.http.routers.plex.rule=${PLEXHOST}
       - traefik.http.routers.plex.entrypoints=websecure
       - traefik.http.routers.plex.tls.certresolver=mydnschallenge
