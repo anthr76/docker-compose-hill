@@ -149,9 +149,44 @@ services:
       - traefik.http.routers.nodered.rule=Host(`node-red.hill`)
       - traefik.http.routers.nodered.entrypoints=web
       - traefik.docker.network=traefik_proxy
-
-
-
+  filebrowser:
+    image: halverneus/static-file-server
+    container_name: fileserver
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    restart: unless-stopped
+    volumes:
+      - /mnt/zfs/Docker/fileserve:/web
+    networks:
+      traefik_proxy:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.fileserve.rule=${FS_NOHAT}
+      - traefik.http.routers.fileserve.entrypoints=websecure
+      - traefik.http.routers.fileserve.tls.certresolver=mydnschallenge
+      - traefik.http.services.fileserve.loadbalancer.server.port=8080
+      - traefik.docker.network=traefik_proxy
+  thecap:
+    image: linuxserver/nginx
+    container_name: full-capper
+    networks:
+      traefik_proxy:
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/cap/config:/config
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cap.rule=${CAP}
+      - traefik.http.routers.cap.entrypoints=websecure
+      - traefik.http.routers.cap.tls.certresolver=mydnschallenge
+      - traefik.http.services.cap.loadbalancer.server.port=80
+      - traefik.docker.network=traefik_proxy
 
 networks:
   traefik_proxy:
