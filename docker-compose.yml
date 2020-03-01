@@ -104,9 +104,7 @@ services:
   homeassistant:
     container_name: homeassistant-stable
     image: homeassistant/home-assistant:stable
-    networks:
-      macvlan101:
-      macvlan100:
+    network_mode: host
     volumes:
       - ${HOME}/Docker/homeassistant:/config
     environment:
