@@ -238,9 +238,3 @@ services:
       - traefik.http.services.plex.loadbalancer.server.port=32400
       - traefik.http.routers.plex-internal.rule=Host(`plex.hill`)
       - traefik.http.routers.plex-internal.entrypoints=web
-
-networks:
-  macvlan101:
-    external: true
-  macvlan100:
-    external: true
