@@ -107,6 +107,7 @@ services:
   homeassistant:
     container_name: homeassistant-stable
     image: homeassistant/home-assistant:stable
+    network_mode: host
     volumes:
       - ${HOME}/Docker/homeassistant:/config
     environment:
