@@ -315,7 +315,55 @@ services:
       - traefik.http.services.radarr.loadbalancer.server.port=7878
       - traefik.http.routers.radarr.rule=Host(`radarr.hill`)
       - traefik.http.routers.radarr.entrypoints=web
-
+  nzbget:
+    container_name: nzbget
+    image: linuxserver/nzbget:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mnt/zfs/Docker/pms/nzbget/downloads:/downloads
+      - ${HOME}/Docker/plex/nzbget:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.nzbget.loadbalancer.server.port=6789
+      - traefik.http.routers.nzbget.rule=Host(`nzbget.hill`)
+      - traefik.http.routers.nzbget.entrypoints=web
+  hydra2:
+    image: linuxserver/hydra2
+    container_name: hydra2
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/hydra2:/config
+      - /mnt/zfs/Docker/pms/hydra2:/downloads
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.hydra2.loadbalancer.server.port=5076
+      - traefik.http.routers.hydra2.rule=Host(`hydra2.hill`)
+      - traefik.http.routers.hydra2.entrypoints=web
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/ombi/config:/config
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ombi.rule=${OMBIHOST}
+      - traefik.http.routers.ombi.entrypoints=websecure
+      - traefik.http.routers.ombi.tls.certresolver=mydnschallenge
+      - traefik.http.services.ombi.loadbalancer.server.port=3579
   
 networks:
   vpn:
