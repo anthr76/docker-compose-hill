@@ -4,6 +4,9 @@ services:
     image: containous/traefik:experimental-master
     container_name: traefik
     restart: always
+    networks:
+      vpn:
+      default:
     extra_hosts: 
       - host.docker.internal:172.17.0.1
     command:
@@ -222,6 +225,7 @@ services:
     environment:
       - PUID${PUID}
       - PGID=${PGID}
+      - TZ=${TZ}
       - VERSION=latest
       - UMASK_SET=022
     volumes:
@@ -238,3 +242,131 @@ services:
       - traefik.http.services.plex.loadbalancer.server.port=32400
       - traefik.http.routers.plex-internal.rule=Host(`plex.hill`)
       - traefik.http.routers.plex-internal.entrypoints=web
+  deluge:
+    image: linuxserver/deluge
+    container_name: deluge
+    networks:
+      vpn:
+    environment:
+      - PUID${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+      - DELUGE_LOGLEVEL=error
+    volumes:
+      - ${HOME}/Docker/plex/deluge:/config
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.deluge.loadbalancer.server.port=8112
+      - traefik.http.routers.deluge.rule=Host(`deluge.hill`)
+      - traefik.http.routers.deluge.entrypoints=web
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    environment:
+      - PUID=${PUID}
+      - PGID={PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/jackett:/config
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.jackett.loadbalancer.server.port=9117
+      - traefik.http.routers.jackett.rule=Host(`jackett.hill`)
+      - traefik.http.routers.jackett.entrypoints=web
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${HOME}/Docker/plex/sonarr:/config
+      - /mnt/zfs/Storage/Media/TV/:/tv
+      - /mnt/zfs/Docker/pms/delugeDownloads:/data
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/TV:/downloads/completed/TV
+      - /mnt/zfs/Docker/pms/nzbget/downloads/intermediate:/downloads/intermediate
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.hill`)
+      - traefik.http.routers.sonarr.entrypoints=web
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${HOME}/Docker/plex/radarr:/config
+      - /mnt/zfs/Storage/Media/Movies:/movies
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/Movies
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+      - traefik.http.routers.radarr.rule=Host(`radarr.hill`)
+      - traefik.http.routers.radarr.entrypoints=web
+  nzbget:
+    container_name: nzbget
+    image: linuxserver/nzbget:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /mnt/zfs/Docker/pms/nzbget/downloads:/downloads
+      - ${HOME}/Docker/plex/nzbget:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.nzbget.loadbalancer.server.port=6789
+      - traefik.http.routers.nzbget.rule=Host(`nzbget.hill`)
+      - traefik.http.routers.nzbget.entrypoints=web
+  hydra2:
+    image: linuxserver/hydra2
+    container_name: hydra2
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/hydra2:/config
+      - /mnt/zfs/Docker/pms/hydra2:/downloads
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.hydra2.loadbalancer.server.port=5076
+      - traefik.http.routers.hydra2.rule=Host(`hydra2.hill`)
+      - traefik.http.routers.hydra2.entrypoints=web
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/ombi/config:/config
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ombi.rule=${OMBIHOST}
+      - traefik.http.routers.ombi.entrypoints=websecure
+      - traefik.http.routers.ombi.tls.certresolver=mydnschallenge
+      - traefik.http.services.ombi.loadbalancer.server.port=3579
+  
+networks:
+  vpn:
+    external:
+      name: docker-vpn0
