@@ -310,7 +310,6 @@ services:
       - /mnt/zfs/Storage/Media/Movies:/movies
       - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/Movies
       - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
-      - /mnt/zfs/Docker/pms/delugeDownloads:/data
     labels:
       - traefik.enable=true
       - traefik.http.services.radarr.loadbalancer.server.port=7878
