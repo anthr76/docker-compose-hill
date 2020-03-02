@@ -274,9 +274,50 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.jackett.loadbalancer.server.port=9117
-      - traefik.http.routers.jackett.rule=Host(`jackett.hill`) && Path(`/`)
+      - traefik.http.routers.jackett.rule=Host(`jackett.hill`)
       - traefik.http.routers.jackett.entrypoints=web
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${HOME}/Docker/plex/sonarr:/config
+      - /mnt/zfs/Storage/Media/TV/:/tv
+      - /mnt/zfs/Docker/pms/delugeDownloads:/data
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/TV:/downloads/completed/TV
+      - /mnt/zfs/Docker/pms/nzbget/downloads/intermediate:/downloads/intermediate
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.hill`)
+      - traefik.http.routers.sonarr.entrypoints=web
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${HOME}/Docker/plex/radarr:/config
+      - /mnt/zfs/Storage/Media/Movies:/movies
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/Movies
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+      - /mnt/zfs/Docker/pms/delugeDownloads:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+      - traefik.http.routers.radarr.rule=Host(`radarr.hill`)
+      - traefik.http.routers.radarr.entrypoints=web
 
+  
 networks:
   vpn:
     external:
