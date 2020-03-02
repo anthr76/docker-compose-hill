@@ -4,6 +4,9 @@ services:
     image: containous/traefik:experimental-master
     container_name: traefik
     restart: always
+    networks:
+      vpn:
+      default:
     extra_hosts: 
       - host.docker.internal:172.17.0.1
     command:
@@ -104,9 +107,6 @@ services:
   homeassistant:
     container_name: homeassistant-stable
     image: homeassistant/home-assistant:stable
-    networks:
-      macvlan101:
-      macvlan100:
     volumes:
       - ${HOME}/Docker/homeassistant:/config
     environment:
@@ -244,12 +244,8 @@ services:
   deluge:
     image: linuxserver/deluge
     container_name: deluge
-    ports:
-      - 8112:8112
     networks:
-      docker-vpn0:
-        aliases: 
-          - deluge
+      vpn:
     environment:
       - PUID${PUID}
       - PGID=${PGID}
@@ -265,12 +261,23 @@ services:
       - traefik.http.services.deluge.loadbalancer.server.port=8112
       - traefik.http.routers.deluge.rule=Host(`deluge.hill`)
       - traefik.http.routers.deluge.entrypoints=web
-      - traefik.docker.network=docker-vpn0
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    environment:
+      - PUID=${PUID}
+      - PGID={PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/plex/jackett:/config
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.jackett.loadbalancer.server.port=9117
+      - traefik.http.routers.jackett.rule=Host(`jackett.hill`) && Path(`/`)
+      - traefik.http.routers.jackett.entrypoints=web
+
 networks:
-  wireguard:
-    ipam:
-      config:
-        - subnet: 10.193.0.0/16
   vpn:
     external:
       name: docker-vpn0
