@@ -224,6 +224,7 @@ services:
     environment:
       - PUID${PUID}
       - PGID=${PGID}
+      - TZ=${TZ}
       - VERSION=latest
       - UMASK_SET=022
     volumes:
@@ -240,9 +241,36 @@ services:
       - traefik.http.services.plex.loadbalancer.server.port=32400
       - traefik.http.routers.plex-internal.rule=Host(`plex.hill`)
       - traefik.http.routers.plex-internal.entrypoints=web
-
+  deluge:
+    image: linuxserver/deluge
+    container_name: deluge
+    ports:
+      - 8112:8112
+    networks:
+      docker-vpn0:
+        aliases: 
+          - deluge
+    environment:
+      - PUID${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+      - DELUGE_LOGLEVEL=error
+    volumes:
+      - ${HOME}/Docker/plex/deluge:/config
+      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.deluge.loadbalancer.server.port=8112
+      - traefik.http.routers.deluge.rule=Host(`deluge.hill`)
+      - traefik.http.routers.deluge.entrypoints=web
+      - traefik.docker.network=docker-vpn0
 networks:
-  macvlan101:
-    external: true
-  macvlan100:
-    external: true
+  wireguard:
+    ipam:
+      config:
+        - subnet: 10.193.0.0/16
+  vpn:
+    external:
+      name: docker-vpn0
