@@ -199,7 +199,7 @@ up (){
 	done
     set_ok; echo "$CMD"
 	
-	IP=`docker run -ti --rm --net=docker-vpn0 appropriate/curl https://api.ipify.org`
+	IP=`docker run -ti --rm --net=docker-vpn0 lucashalbert/curl http://httpbin.org/ip`
 	if [[ $IP == $ENDPOINT_IP ]]; then
 		set_ok; echo "Connected to $ENDPOINT_IP"
 	else
@@ -234,7 +234,7 @@ down(){
 	done
 	set_ok; echo "$CMD"
 	
-	IP=`docker run -ti --rm --net=docker-vpn0 appropriate/curl https://api.ipify.org`
+	IP=`docker run -ti --rm --net=docker-vpn0 lucashalbert/curl http://httpbin.org/ip`
 	if [[ $IP == *"Could not resolve host"*  ]]; then
 		set_ok; echo "Blackhole active"
 	else
@@ -280,7 +280,7 @@ status(){
 	done
 	set_ok; echo "$CMD"
 	
-	IP=`docker run -ti --rm --net=docker-vpn0 appropriate/curl https://api.ipify.org`
+	IP=`docker run -ti --rm --net=docker-vpn0 lucashalbert/curl http://httpbin.org/ip`
 	if [[ $IP == $ENDPOINT_IP ]]; then
 		set_ok; echo "Connected to $ENDPOINT_IP"
 	else
