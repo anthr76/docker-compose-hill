@@ -310,7 +310,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${HOME}/Docker/plex/radarr:/config
       - /mnt/zfs/Storage/Media/Movies:/movies
-      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/TV
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/Movies
       - /mnt/zfs/Docker/pms/delugeDownloads/completed:/downloads/completed
     labels:
       - traefik.enable=true
