@@ -17,6 +17,7 @@ services:
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --entrypoints.udp.address=:443/udp
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge=true
       - --certificatesresolvers.myresolver.acme.httpChallenge=true
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare
@@ -144,7 +145,7 @@ services:
       - traefik.http.routers.nodered.rule=Host(`node-red.hill`)
       - traefik.http.routers.nodered.entrypoints=web
   filebrowser:
-    image: halverneus/static-file-server
+    image: linuxserver/nginx
     container_name: fileserver-web
     depends_on: 
       - traefik
@@ -154,13 +155,14 @@ services:
       - TZ=${TZ}
     restart: unless-stopped
     volumes:
-      - /mnt/zfs/Docker/fileserve:/web
+      - /mnt/zfs/Docker/fileserve:/config/www/
+      - ${HOME}/Docker/filserve/config:/config
     labels:
       - traefik.enable=true
       - traefik.http.routers.fileserve.rule=${FS_NOHAT}
       - traefik.http.routers.fileserve.entrypoints=websecure
       - traefik.http.routers.fileserve.tls.certresolver=mydnschallenge
-      - traefik.http.services.fileserve.loadbalancer.server.port=8080
+      - traefik.http.services.fileserve.loadbalancer.server.port=80
   thecap:
     image: linuxserver/nginx
     container_name: cap-web-nginx
@@ -289,9 +291,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${HOME}/Docker/plex/sonarr:/config
       - /mnt/zfs/Storage/Media/TV/:/tv
-      - /mnt/zfs/Docker/pms/delugeDownloads:/data
+      - /mnt/zfs/Docker/pms/delugeDownloads/completed:/downloads/completed
       - /mnt/zfs/Docker/pms/nzbget/downloads/completed/TV:/downloads/completed/TV
-      - /mnt/zfs/Docker/pms/nzbget/downloads/intermediate:/downloads/intermediate
     labels:
       - traefik.enable=true
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
@@ -309,8 +310,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${HOME}/Docker/plex/radarr:/config
       - /mnt/zfs/Storage/Media/Movies:/movies
-      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/Movies
-      - /mnt/zfs/Docker/pms/delugeDownloads:/downloads
+      - /mnt/zfs/Docker/pms/nzbget/downloads/completed/Movies:/downloads/completed/TV
+      - /mnt/zfs/Docker/pms/delugeDownloads/completed:/downloads/completed
     labels:
       - traefik.enable=true
       - traefik.http.services.radarr.loadbalancer.server.port=7878
@@ -367,6 +368,7 @@ services:
       - traefik.http.services.ombi.loadbalancer.server.port=3579
   
 networks:
+  minecraft:
   vpn:
     external:
       name: docker-vpn0
