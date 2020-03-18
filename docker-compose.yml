@@ -17,7 +17,7 @@ services:
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --entrypoints.udp.address=:443/udp
+      - --entrypoints.mc.address=:444/udp
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge=true
       - --certificatesresolvers.myresolver.acme.httpChallenge=true
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare
@@ -366,6 +366,42 @@ services:
       - traefik.http.routers.ombi.entrypoints=websecure
       - traefik.http.routers.ombi.tls.certresolver=mydnschallenge
       - traefik.http.services.ombi.loadbalancer.server.port=3579
+  waterfall:
+    container_name: minecraft-waterfall
+    image: rr59/waterfall
+    restart: unless-stopped
+    ports:
+     - 444:25577
+    networks: 
+      minecraft:
+        aliases: 
+          - waterfall
+    environment:
+     - PUID=${PUID}
+     - PGID=${PGID}
+     - TZ=${TZ}
+    volumes:
+      - ${HOME}/Docker/mcnew/waterfall/config.yml:/server/config.yml
+  minecraft-1:
+    image: itzg/minecraft-server
+    container_name: mc-server-1
+    command: --noconsole
+    networks: 
+      minecraft:
+        aliases: 
+          - mc1
+    volumes:
+      - ${HOME}/Docker/mcnew/mc-server-1:/data
+    environment:
+      - EULA=TRUE
+      - ENABLE_RCON=FALSE
+      - TYPE=PAPER
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+
+      
   
 networks:
   minecraft:
