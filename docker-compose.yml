@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   traefik:
-    image: containous/traefik:experimental-master
+    image: traefik:latest
     container_name: traefik
     restart: always
     networks:
@@ -22,7 +22,8 @@ services:
       - --certificatesresolvers.myresolver.acme.httpChallenge=true
       - --certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare
       - --certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=websecure
-      - --certificatesresolvers.mydnschallenge.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesResolvers.myresolver.acme.dnsChallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.mydnschallenge.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
       - --certificatesresolvers.mydnschallenge.acme.email=${CF_EMAIL}
       - --certificatesresolvers.myresolver.acme.email=${CF_EMAIL}
       - --certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json
@@ -65,8 +66,9 @@ services:
     volumes:
       - ${HOME}/Docker/bitwarden:/data
     environment:
-      - WEBSOCKET_ENABLED= true
-      - SIGNUPS_ALLOWED= false
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=false
+      - ADMIN_TOKEN=${BRSADMINTOKEN}
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}      
@@ -267,6 +269,7 @@ services:
   jackett:
     image: linuxserver/jackett
     container_name: jackett
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID={PGID}
@@ -280,7 +283,7 @@ services:
       - traefik.http.routers.jackett.rule=Host(`jackett.hill`)
       - traefik.http.routers.jackett.entrypoints=web
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: linuxserver/sonarr:preview
     container_name: sonarr
     restart: unless-stopped
     environment:
@@ -300,7 +303,7 @@ services:
       - traefik.http.routers.sonarr.entrypoints=web
   radarr:
     container_name: radarr
-    image: linuxserver/radarr:latest
+    image: linuxserver/radarr:preview
     restart: unless-stopped
     environment:
       - PUID=${PUID}
@@ -366,45 +369,84 @@ services:
       - traefik.http.routers.ombi.entrypoints=websecure
       - traefik.http.routers.ombi.tls.certresolver=mydnschallenge
       - traefik.http.services.ombi.loadbalancer.server.port=3579
-  waterfall:
-    container_name: minecraft-waterfall
-    image: rr59/waterfall
+  drone-server:
+    container_name: drone-server
+    image: drone/drone
     restart: unless-stopped
-    ports:
-     - 444:25577
-    networks: 
-      minecraft:
-        aliases: 
-          - waterfall
-    environment:
-     - PUID=${PUID}
-     - PGID=${PGID}
-     - TZ=${TZ}
     volumes:
-      - ${HOME}/Docker/mcnew/waterfall/config.yml:/server/config.yml
-  minecraft-1:
-    image: itzg/minecraft-server
-    container_name: mc-server-1
-    command: --noconsole
-    networks: 
-      minecraft:
-        aliases: 
-          - mc1
-    volumes:
-      - ${HOME}/Docker/mcnew/mc-server-1:/data
+      - ${HOME}/Docker/drone/server:/data
+    restart: unless-stopped
+    environment:      
+      - DRONE_GITHUB_CLIENT_ID=${DRONEGHCID}
+      - DRONE_LOGS_DEBUG=true
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONEGHS}
+      - DRONE_SERVER_PROTO=https
+      - DRONE_RPC_SECRET=${RPCSECRET}
+      - DRONE_SERVER_HOST=${DRONESERVERHOST}
+      - DRONE_USER_CREATE=${DRONEADMIN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.drone.loadbalancer.server.port=80
+      - traefik.http.routers.drone.rule=${DRONEHOST}
+      - traefik.http.routers.drone.entrypoints=websecure
+      - traefik.http.routers.drone.tls.certresolver=mydnschallenge
+  drone-runner:
+    container_name: drone-runner
+    image: drone/drone-runner-docker
+    volumes: 
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment: 
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_HOST=${DRONESERVERHOST}
+      - DRONE_RPC_SECRET=${RPCSECRET}
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=hill
+  bazarr:
+    image: linuxserver/bazarr
+    container_name: bazarr
     environment:
-      - EULA=TRUE
-      - ENABLE_RCON=FALSE
-      - TYPE=PAPER
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-
-
-      
+      - UMASK_SET=022
+    volumes:
+      - /${HOME}/Docker/plex/bazarr:/config
+      - /mnt/zfs/Storage/Media/Movies:/movies
+      - /mnt/zfs/Storage/Media/TV:/tv
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.bazarr.loadbalancer.server.port=6767
+      - traefik.http.routers.bazarr.rule=Host(`bazarr.hill`)
+      - traefik.http.routers.bazarr.entrypoints=web
+  jellyfin:
+    image: linuxserver/jellyfin
+    container_name: jellyfin
+    tmpfs:
+      - /tmp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - /${HOME}/Docker/plex/jellyfin:/config
+      - /mnt/zfs/Storage/Media/TV:/data/tvshows
+      - /mnt/zfs/Storage/Media/Movies:/data/movies
+      - /tmp:/transcode
+    network_mode: host
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyfin.rule=${JELLYHOST}
+      - traefik.http.routers.jellyfin.entrypoints=websecure
+      - traefik.http.routers.jellyfin.tls.certresolver=mydnschallenge
+      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+      - traefik.http.routers.jellyfin-internal.rule=Host(`jellyfin.hill`)
+      - traefik.http.routers.jellyfin-internal.entrypoints=web
+  
   
 networks:
-  minecraft:
   vpn:
     external:
       name: docker-vpn0
